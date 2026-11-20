@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from uuid import uuid4
 
 import streamlit as st
 from sqlalchemy import text
@@ -11,7 +12,7 @@ from src.config.settings import has_google_oauth_config, load_settings
 from src.db.connection import get_transaction
 from src.db.queries import fetch_all, fetch_one
 from src.services.audit_service import log_audit_event
-from src.services.exceptions import AuthorizationError, ValidationError
+from src.services.exceptions import AuthorizationError, BusinessRuleError, ValidationError
 from src.ui.components.assets import get_asset_data_uri
 
 
@@ -103,15 +104,31 @@ def sync_google_user(
             ).mappings().first()
             user_record = dict(row)
         else:
-            # Se for o primeiro usuário real ou estiver em admin_emails, promove para ADMIN
+            # Sistema interno corporativo: apenas e-mails pré-cadastrados pelo ADMIN
+            # (ou configurados em admin_emails / bootstrap inicial sem admins) podem entrar.
             existing_admins = conn.execute(
                 text("SELECT COUNT(*) FROM usuarios WHERE perfil = 'ADMIN' AND ativo = TRUE")
             ).scalar()
-            assigned_role = (
-                "ADMIN"
-                if (is_configured_admin or (existing_admins or 0) == 0)
-                else settings.default_role
-            )
+            if not is_configured_admin and (existing_admins or 0) > 0:
+                log_audit_event(
+                    usuario_id=None,
+                    modulo="AUTH",
+                    entidade="usuarios",
+                    entidade_id=None,
+                    acao="LOGIN_NEGADO",
+                    detalhes={
+                        "email": normalized_email,
+                        "motivo": "email_nao_cadastrado",
+                    },
+                    conn=conn,
+                )
+                return {
+                    "_denied": True,
+                    "message": (
+                        f"Acesso restrito: o e-mail '{normalized_email}' não está cadastrado "
+                        "no sistema. Solicite o cadastro a um administrador da cafeteria."
+                    ),
+                }
 
             row = conn.execute(
                 text(
@@ -120,7 +137,7 @@ def sync_google_user(
                         google_sub, email, nome, avatar_url, perfil, ativo, ultimo_login_em
                     )
                     VALUES (
-                        :google_sub, :email, :nome, :avatar_url, :perfil, TRUE, NOW()
+                        :google_sub, :email, :nome, :avatar_url, 'ADMIN', TRUE, NOW()
                     )
                     RETURNING id, google_sub, email, nome, avatar_url, perfil, ativo, ultimo_login_em
                     """
@@ -130,7 +147,6 @@ def sync_google_user(
                     "email": normalized_email,
                     "nome": nome.strip() or normalized_email.split("@")[0],
                     "avatar_url": avatar_url,
-                    "perfil": assigned_role,
                 },
             ).mappings().first()
             user_record = dict(row)
@@ -156,6 +172,62 @@ def list_users() -> list[dict[str, Any]]:
         ORDER BY ativo DESC, nome ASC
         """
     )
+
+
+def pre_register_user(
+    *,
+    nome: str,
+    email: str,
+    perfil: str,
+    actor_user_id: int,
+) -> dict[str, Any]:
+    """Pré-cadastra um funcionário/usuário por e-mail Google e perfil antes do 1º login."""
+    nome_clean = nome.strip()
+    email_clean = email.strip().lower()
+    valid_roles = {"ADMIN", "GERENTE", "CAIXA", "BARISTA", "ESTOQUISTA"}
+
+    if not nome_clean:
+        raise ValidationError("Nome do funcionário é obrigatório.")
+    if not email_clean or "@" not in email_clean or "." not in email_clean.split("@")[-1]:
+        raise ValidationError("Informe um e-mail Google válido.")
+    if perfil not in valid_roles:
+        raise ValidationError(f"Perfil inválido: {perfil}")
+
+    with get_transaction() as conn:
+        dup = fetch_one(
+            "SELECT id FROM usuarios WHERE LOWER(email) = :email",
+            {"email": email_clean},
+            conn=conn,
+        )
+        if dup:
+            raise BusinessRuleError(f"Já existe um usuário cadastrado com o e-mail '{email_clean}'.")
+
+        row = conn.execute(
+            text(
+                """
+                INSERT INTO usuarios (google_sub, email, nome, perfil, ativo, ultimo_login_em)
+                VALUES (:sub, :email, :nome, :perfil, TRUE, NULL)
+                RETURNING id, email, nome, perfil, ativo, ultimo_login_em
+                """
+            ),
+            {
+                "sub": f"pre-{uuid4().hex}",
+                "email": email_clean,
+                "nome": nome_clean,
+                "perfil": perfil,
+            },
+        ).mappings().first()
+        record = dict(row)
+        log_audit_event(
+            usuario_id=actor_user_id,
+            modulo="AUTH",
+            entidade="usuarios",
+            entidade_id=int(record["id"]),
+            acao="PRE_CADASTRAR_USUARIO",
+            detalhes={"email": email_clean, "nome": nome_clean, "perfil": perfil},
+            conn=conn,
+        )
+        return record
 
 
 def update_user_role_or_status(
@@ -383,11 +455,15 @@ def render_login_gate() -> dict[str, Any] | None:
             nome=name,
             avatar_url=picture or None,
         )
+        if user_record.get("_denied"):
+            raise AuthorizationError(str(user_record["message"]))
         st.session_state["current_user"] = user_record
         return user_record
     except Exception as exc:
-        st.error(f"Não foi possível concluir o login: {exc}")
-        if st.button("Sair da conta Google"):
-            st.session_state.pop("current_user", None)
-            st.logout()
+        col_l, col_c, col_r = st.columns([1.2, 2, 1.2])
+        with col_c:
+            st.error(str(exc))
+            if st.button("Sair e trocar conta Google", icon=":material/logout:", use_container_width=True):
+                st.session_state.pop("current_user", None)
+                st.logout()
         return None

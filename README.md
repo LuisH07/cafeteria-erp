@@ -159,10 +159,9 @@ Edite `.streamlit/secrets.toml` com suas credenciais. O arquivo é ignorado pelo
 | `[auth.google].client_id` / `client_secret` | Credenciais do aplicativo Web no Google Cloud Console | `st.login("google")` |
 | `[auth.google].server_metadata_url` | Endpoint OIDC do Google (`accounts.google.com/.well-known/openid-configuration`) | `st.login("google")` |
 | `[auth_policy].admin_emails` | Contas promovidas automaticamente para `ADMIN` (inclui `assuero.ximenes@ufape.edu.br`) | `src/auth/google_auth.py` |
-| `[auth_policy].default_role` | Perfil padrão de novos usuários autenticados via Google (`GERENTE`) | `src/auth/google_auth.py` |
-| `[auth_policy].allowed_domains` | Lista opcional de domínios permitidos (vazio = qualquer conta Google) | `src/auth/google_auth.py` |
+| `[auth_policy].allowed_domains` | Lista opcional de domínios permitidos (vazio = valida apenas pré-cadastro interno pelo `ADMIN`) | `src/auth/google_auth.py` |
 
-> Certifique-se de cadastrar `assuero.ximenes@ufape.edu.br` e seu e-mail em **Google Auth Platform → Público-alvo → Usuários de teste** (ou publicar o app em produção) no Google Cloud Console.
+> **Política interna de acesso:** o sistema não cria contas automaticamente para desconhecidos. Apenas funcionários previamente cadastrados pelo `ADMIN` (em *Visão Geral → Administração → Usuários e Perfis*) ou e-mails em `admin_emails` conseguem acessar. Certifique-se também de cadastrar `assuero.ximenes@ufape.edu.br` e seu e-mail em **Google Auth Platform → Público-alvo → Usuários de teste** (ou publicar o app em produção) no Google Cloud Console.
 
 ---
 

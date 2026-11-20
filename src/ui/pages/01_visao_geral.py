@@ -5,7 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from src.auth.google_auth import list_users, update_user_role_or_status
+from src.auth.google_auth import list_users, pre_register_user, update_user_role_or_status
 from src.db.queries import fetch_one
 from src.services.audit_service import list_recent_audit_logs
 from src.services.estoque_service import get_estoque_position
@@ -122,38 +122,86 @@ if user_can(user, "usuarios:manage"):
     with tab_usr:
         usuarios = list_users()
         if usuarios:
-            df_u = pd.DataFrame(usuarios)
-            df_u["ultimo_login_em"] = df_u["ultimo_login_em"].apply(fmt_datetime)
-            st.dataframe(
-                df_u[["id", "nome", "email", "perfil", "ativo", "ultimo_login_em"]],
-                use_container_width=True,
-                hide_index=True,
-            )
+            rows_u = [
+                {
+                    "ID": u["id"],
+                    "Nome": u["nome"],
+                    "E-mail": u["email"],
+                    "Perfil": u["perfil"],
+                    "Status": "Ativo" if u["ativo"] else "Inativo",
+                    "Último Acesso": fmt_datetime(u["ultimo_login_em"]),
+                }
+                for u in usuarios
+            ]
+            st.dataframe(pd.DataFrame(rows_u), use_container_width=True, hide_index=True)
 
-            with st.form("form_atualizar_perfil_usuario"):
-                st.markdown("**Alterar perfil ou status de um usuário**")
-                opcoes_u = {f"{u['nome']} ({u['email']})": u for u in usuarios}
-                sel_label = st.selectbox("Usuário", list(opcoes_u.keys()))
-                sel_u = opcoes_u[sel_label]
-                c_p, c_a = st.columns(2)
-                novo_perfil = c_p.selectbox(
-                    "Perfil de Acesso",
-                    ["ADMIN", "GERENTE", "CAIXA", "BARISTA", "ESTOQUISTA"],
-                    index=["ADMIN", "GERENTE", "CAIXA", "BARISTA", "ESTOQUISTA"].index(sel_u["perfil"]),
+        col_cad, col_edit = st.columns(2)
+        with col_cad:
+            with st.form("form_pre_cadastrar_usuario"):
+                st.markdown("**Cadastrar Novo Funcionário**")
+                st.caption(
+                    "Quando o funcionário entrar com essa conta Google pela primeira vez, "
+                    "receberá automaticamente o perfil escolhido abaixo."
                 )
-                novo_ativo = c_a.checkbox("Conta Ativa", value=bool(sel_u["ativo"]))
-                if st.form_submit_button("Salvar Alteração", type="primary"):
+                novo_nome = st.text_input("Nome completo*", placeholder="Ex.: João Silva")
+                novo_email = st.text_input("E-mail Google*", placeholder="Ex.: joao.silva@gmail.com")
+                novo_cargo = st.selectbox(
+                    "Perfil de Acesso*",
+                    ["CAIXA", "BARISTA", "ESTOQUISTA", "GERENTE", "ADMIN"],
+                )
+                if st.form_submit_button(
+                    "Cadastrar Funcionário",
+                    icon=":material/person_add:",
+                    type="primary",
+                    use_container_width=True,
+                ):
                     try:
-                        update_user_role_or_status(
-                            target_user_id=int(sel_u["id"]),
-                            perfil=novo_perfil,
-                            ativo=novo_ativo,
+                        pre_register_user(
+                            nome=novo_nome,
+                            email=novo_email,
+                            perfil=novo_cargo,
                             actor_user_id=int(user["id"]),
                         )
-                        st.success("Perfil do usuário atualizado com sucesso.")
+                        st.success(
+                            f"Funcionário **{novo_nome}** cadastrado como **{novo_cargo}**! "
+                            "Já funcionará automaticamente no primeiro login Google."
+                        )
                         st.rerun()
                     except DomainError as exc:
                         st.error(str(exc))
+
+        with col_edit:
+            if usuarios:
+                with st.form("form_atualizar_perfil_usuario"):
+                    st.markdown("**Alterar Perfil ou Status**")
+                    opcoes_u = {f"{u['nome']} ({u['email']})": u for u in usuarios}
+                    sel_label = st.selectbox("Usuário", list(opcoes_u.keys()))
+                    sel_u = opcoes_u[sel_label]
+                    c_p, c_a = st.columns(2)
+                    novo_perfil = c_p.selectbox(
+                        "Perfil de Acesso",
+                        ["ADMIN", "GERENTE", "CAIXA", "BARISTA", "ESTOQUISTA"],
+                        index=["ADMIN", "GERENTE", "CAIXA", "BARISTA", "ESTOQUISTA"].index(
+                            sel_u["perfil"]
+                        ),
+                    )
+                    novo_ativo = c_a.checkbox("Conta Ativa", value=bool(sel_u["ativo"]))
+                    if st.form_submit_button(
+                        "Salvar Alteração",
+                        icon=":material/check_circle:",
+                        use_container_width=True,
+                    ):
+                        try:
+                            update_user_role_or_status(
+                                target_user_id=int(sel_u["id"]),
+                                perfil=novo_perfil,
+                                ativo=novo_ativo,
+                                actor_user_id=int(user["id"]),
+                            )
+                            st.success("Perfil do usuário atualizado com sucesso.")
+                            st.rerun()
+                        except DomainError as exc:
+                            st.error(str(exc))
 
     with tab_aud:
         logs = list_recent_audit_logs(limit=40)
