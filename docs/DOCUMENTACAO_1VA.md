@@ -3,6 +3,7 @@
 * **Disciplina:** Sistemas de Informação e Tecnologias — UFAPE (2026.2)
 * **Professor:** Dr. Assuero Fonseca Ximenes
 * **Sistema:** ERP Integrado para Cafeteria Artesanal (**Cafeteria Grão do Agreste**)
+* **Aplicação Publicada:** [https://cafeteria-erp.streamlit.app/](https://cafeteria-erp.streamlit.app/)
 * **Infraestrutura:** Python · Streamlit · PostgreSQL (Supabase) · Autenticação Google (OIDC) · GitHub · Streamlit Community Cloud
 
 ---

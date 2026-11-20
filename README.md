@@ -19,6 +19,10 @@
 </p>
 
 <p align="center">
+  <a href="https://cafeteria-erp.streamlit.app/" target="_blank"><img src="https://img.shields.io/badge/App%20Online-cafeteria--erp.streamlit.app-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" /></a>
+</p>
+
+<p align="center">
   <a href="#"><img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" /></a>
   <a href="#"><img src="https://img.shields.io/badge/Streamlit-1.42+-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" /></a>
   <a href="#"><img src="https://img.shields.io/badge/PostgreSQL-15+-336791?style=for-the-badge&logo=postgresql&logoColor=white" /></a>
@@ -231,21 +235,24 @@ TEST_DATABASE_URL="$TEST_DATABASE_URL" pytest tests/test_bi_kpis.py -v
 
 ## Deploy (Streamlit Community Cloud + Supabase)
 
+* **Aplicação publicada (Produção):** [https://cafeteria-erp.streamlit.app/](https://cafeteria-erp.streamlit.app/)
+* **Callback OAuth (Produção):** `https://cafeteria-erp.streamlit.app/oauth2callback`
+
 A publicação oficial segue o fluxo integrado entre **GitHub**, **Supabase** e **Streamlit Community Cloud** (detalhado em [`docs/GUIA_DEPLOY_SUPABASE_GOOGLE.md`](docs/GUIA_DEPLOY_SUPABASE_GOOGLE.md)):
 
 | Branch | Papel no fluxo |
 |---|---|
 | `develop` | Integração contínua das funcionalidades do ERP (1ª VA) e do Dashboard BI (2ª VA) |
-| `main` | Versão estável publicada no Streamlit Community Cloud para avaliação da disciplina |
+| `main` | Versão estável publicada automaticamente em [cafeteria-erp.streamlit.app](https://cafeteria-erp.streamlit.app/) |
 
 ### Checklist de publicação
 
-1. Conectar o repositório GitHub em [share.streamlit.io](https://share.streamlit.io/) apontando para o arquivo principal **`app.py`**.
+1. Conectar o repositório GitHub em [share.streamlit.io](https://share.streamlit.io/) apontando para a branch **`main`** e arquivo principal **`app.py`**.
 2. Configurar **App Settings → Secrets** com o conteúdo de `.streamlit/secrets.toml`, ajustando `[auth].redirect_uri` para:
    ```toml
-   redirect_uri = "https://SEU-APP.streamlit.app/oauth2callback"
+   redirect_uri = "https://cafeteria-erp.streamlit.app/oauth2callback"
    ```
-3. Confirmar que `https://SEU-APP.streamlit.app/oauth2callback` está cadastrada em **Authorized redirect URIs** no Google Cloud Console.
+3. Confirmar que `https://cafeteria-erp.streamlit.app/oauth2callback` está cadastrada em **Authorized redirect URIs** no Google Cloud Console.
 4. Garantir que o projeto no Supabase está ativo (Free Tier entra em pausa após 7 dias sem atividade) e que os scripts `init_db.py` e `seed_db.py` foram executados.
 
 ---

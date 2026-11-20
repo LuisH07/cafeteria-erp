@@ -2,6 +2,7 @@
 
 * **Disciplina:** Sistemas de Informação e Tecnologias — UFAPE (2026.2)
 * **Professor:** Dr. Assuero Fonseca Ximenes
+* **Aplicação Publicada:** [https://cafeteria-erp.streamlit.app/](https://cafeteria-erp.streamlit.app/)
 * **Módulo Analítico:** `src/ui/pages/08_dashboard_bi.py` · `src/services/bi_service.py` · `sql/002_views_bi.sql`
 
 ---

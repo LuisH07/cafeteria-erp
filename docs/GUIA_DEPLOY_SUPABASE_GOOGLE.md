@@ -35,7 +35,7 @@ Este guia descreve o passo a passo completo para provisionar o PostgreSQL no **S
    * **Application type:** `Web application`
    * **Authorized redirect URIs** (adicione exatamente ambas):
      * Ambiente local: `http://localhost:8501/oauth2callback`
-     * Produção (Streamlit Cloud): `https://SEU-APP.streamlit.app/oauth2callback`
+     * Produção (Streamlit Cloud): `https://cafeteria-erp.streamlit.app/oauth2callback`
 4. Copie o **Client ID** e o **Client Secret** gerados.
 
 ---
@@ -109,10 +109,10 @@ TEST_DATABASE_URL="$DATABASE_URL" pytest -v
 2. Acesse [share.streamlit.io](https://share.streamlit.io/), clique em **Create app** e conecte seu repositório GitHub:
    * **Branch:** `main` (ou `develop`, conforme entrega)
    * **Main file path:** `app.py`
-3. Antes ou logo após criar o app, abra **Settings → Secrets** e cole o conteúdo do seu `.streamlit/secrets.toml`, **atualizando apenas `redirect_uri`** para a URL real do deploy:
+3. Antes ou logo após criar o app, abra **Settings → Secrets** e cole o conteúdo do seu `.streamlit/secrets.toml`, **atualizando apenas `redirect_uri`** para a URL real do deploy (`https://cafeteria-erp.streamlit.app/`):
    ```toml
    [auth]
-   redirect_uri = "https://SEU-APP.streamlit.app/oauth2callback"
+   redirect_uri = "https://cafeteria-erp.streamlit.app/oauth2callback"
    ```
-4. Confirme que essa mesma URL `https://SEU-APP.streamlit.app/oauth2callback` está cadastrada em **Authorized redirect URIs** no Google Cloud Console.
-5. Reinicie o app no Streamlit Cloud e teste o fluxo completo de login com Google + ERP + Dashboard BI.
+4. Confirme que essa mesma URL `https://cafeteria-erp.streamlit.app/oauth2callback` está cadastrada em **Authorized redirect URIs** no Google Cloud Console.
+5. Reinicie o app no Streamlit Cloud (se necessário) e teste o fluxo completo em [https://cafeteria-erp.streamlit.app/](https://cafeteria-erp.streamlit.app/).
