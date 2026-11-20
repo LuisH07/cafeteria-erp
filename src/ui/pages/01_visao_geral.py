@@ -6,7 +6,6 @@ import pandas as pd
 import streamlit as st
 
 from src.auth.google_auth import list_users, update_user_role_or_status
-from src.db.connection import check_database_health
 from src.db.queries import fetch_one
 from src.services.audit_service import list_recent_audit_logs
 from src.services.estoque_service import get_estoque_position
@@ -24,8 +23,9 @@ from src.ui.components.layout import (
 
 user = ensure_page_access("visao_geral")
 render_page_header(
-    "☕ Visão Geral Operacional",
+    "Visão Geral Operacional",
     "Painel de acompanhamento diário integrado entre Vendas, Estoque, Barista e Financeiro.",
+    icon_name="layout-dashboard",
 )
 
 # Resumo do dia
@@ -66,7 +66,7 @@ st.divider()
 col_esq, col_dir = st.columns(2)
 
 with col_esq:
-    st.subheader("🚨 Alertas de Reposição de Estoque")
+    st.subheader(":material/warning: Alertas de Reposição de Estoque")
     if criticos:
         df_crit = pd.DataFrame(criticos)[
             ["sku", "nome", "estoque_atual", "estoque_minimo", "unidade_medida", "localizacao"]
@@ -76,21 +76,23 @@ with col_esq:
     else:
         st.success("Nenhum insumo abaixo do estoque mínimo no momento.")
 
-    st.subheader("☕ Pedidos em Aberto no Operacional (Barista)")
+    st.subheader(":material/local_cafe: Pedidos em Aberto no Operacional (Barista)")
     if fila_aberta:
         for ordem in fila_aberta[:6]:
-            badge = {"NA_FILA": "🟡 Na Fila", "EM_PREPARO": "🟠 Em Preparo", "PRONTO": "🟢 Pronto"}.get(
-                ordem["status"], ordem["status"]
-            )
+            badge = {
+                "NA_FILA": ":material/schedule: Na Fila",
+                "EM_PREPARO": ":material/local_fire_department: Em Preparo",
+                "PRONTO": ":material/check_circle: Pronto",
+            }.get(ordem["status"], ordem["status"])
             st.info(
-                f"**{ordem['numero_venda']}** ({ordem['canal_venda']}) — {badge}\n\n"
+                f"**{ordem['numero_venda']}** ({ordem['canal_venda']}) - {badge}\n\n"
                 f"Cliente: {ordem['cliente_nome']} | Itens: {ordem['itens_resumo']}"
             )
     else:
         st.success("Fila de preparo zerada no momento.")
 
 with col_dir:
-    st.subheader("💰 Contas Atrasadas ou Vencendo")
+    st.subheader(":material/payments: Contas Atrasadas ou Vencendo")
     titulos_alerta = [
         t
         for t in list_titulos_financeiros(situacao="Todos", limit=50)
@@ -100,7 +102,7 @@ with col_dir:
         rows_fin = [
             {
                 "Tipo": t["tipo"],
-                "Situação": "🔴 ATRASADO" if t["situacao"] == "ATRASADO" else "🟡 ABERTO",
+                "Situação": "ATRASADO" if t["situacao"] == "ATRASADO" else "ABERTO",
                 "Vencimento": fmt_date(t["data_vencimento"]),
                 "Descrição": t["descricao"],
                 "Valor": fmt_brl(t["valor_original"]),
@@ -111,20 +113,10 @@ with col_dir:
     else:
         st.success("Não há títulos pendentes ou atrasados.")
 
-    st.subheader("🔌 Status da Infraestrutura")
-    health = check_database_health()
-    if health.get("ok"):
-        st.success(
-            f"PostgreSQL/Supabase conectado (`{health['database']}`). "
-            f"Última verificação: {fmt_datetime(health['server_time'])}"
-        )
-    else:
-        st.error(f"Erro na conexão com o banco: {health.get('error')}")
-
 # Seção exclusiva de ADMIN: Gestão de Perfis e Trilha de Auditoria
 if user_can(user, "usuarios:manage"):
     st.divider()
-    st.subheader("🛡️ Administração — Controle de Acesso (RBAC) e Auditoria")
+    st.subheader(":material/admin_panel_settings: Administração - Controle de Acesso e Auditoria")
     tab_usr, tab_aud = st.tabs(["Usuários e Perfis", "Trilha de Auditoria Recente"])
 
     with tab_usr:
@@ -145,7 +137,7 @@ if user_can(user, "usuarios:manage"):
                 sel_u = opcoes_u[sel_label]
                 c_p, c_a = st.columns(2)
                 novo_perfil = c_p.selectbox(
-                    "Perfil RBAC",
+                    "Perfil de Acesso",
                     ["ADMIN", "GERENTE", "CAIXA", "BARISTA", "ESTOQUISTA"],
                     index=["ADMIN", "GERENTE", "CAIXA", "BARISTA", "ESTOQUISTA"].index(sel_u["perfil"]),
                 )
@@ -168,7 +160,7 @@ if user_can(user, "usuarios:manage"):
         if logs:
             rows_log = [
                 {
-                    "Data/Hora": fmt_datetime(l["criado_em"]),
+                    "Data e Hora": fmt_datetime(l["criado_em"]),
                     "Usuário": l["usuario_nome"],
                     "Módulo": l["modulo"],
                     "Entidade": l["entidade"],

@@ -31,8 +31,9 @@ user = ensure_page_access("financeiro")
 can_write = user_can(user, "financeiro:write")
 
 render_page_header(
-    "💰 Financeiro — Contas, Fluxo de Caixa & DRE",
+    "Gestão Financeira",
     "Consolidação monetária automática das vendas, compras e despesas operacionais da cafeteria.",
+    icon_name="wallet",
 )
 
 resumo = get_resumo_financeiro()
@@ -48,10 +49,10 @@ m4.metric(
 
 tab_tit, tab_novo, tab_caixa, tab_dre = st.tabs(
     [
-        "📑 Contas a Pagar e Receber",
-        "➕ Lançar Despesa / Receita",
-        "💵 Fluxo de Caixa (Extrato)",
-        "📊 DRE Mensal Consolidada",
+        ":material/receipt_long: Contas a Pagar e Receber",
+        ":material/add_circle: Novo Lançamento",
+        ":material/payments: Fluxo de Caixa (Extrato)",
+        ":material/bar_chart: DRE Mensal Consolidada",
     ]
 )
 
@@ -69,10 +70,10 @@ with tab_tit:
     )
     if titulos:
         badge_map = {
-            "ATRASADO": "🔴 ATRASADO",
-            "ABERTO": "🟡 ABERTO",
-            "PAGO": "🟢 PAGO",
-            "CANCELADO": "⚫ CANCELADO",
+            "ATRASADO": "ATRASADO",
+            "ABERTO": "ABERTO",
+            "PAGO": "PAGO",
+            "CANCELADO": "CANCELADO",
         }
         st.dataframe(
             pd.DataFrame(
@@ -99,9 +100,9 @@ with tab_tit:
         abertos = [t for t in titulos if t["status"] == "ABERTO"]
         if can_write and abertos:
             st.divider()
-            st.subheader("Baixar / Liquidar Título em Aberto")
+            st.subheader("Liquidar Título em Aberto")
             t_map = {
-                f"#{t['id']} [{t['tipo']}] {t['descricao']} — {fmt_brl(t['valor_original'])} (venc. {fmt_date(t['data_vencimento'])})": t
+                f"#{t['id']} [{t['tipo']}] {t['descricao']} - {fmt_brl(t['valor_original'])} (venc. {fmt_date(t['data_vencimento'])})": t
                 for t in abertos
             }
             sel_t = t_map[st.selectbox("Selecione o Título", list(t_map.keys()))]
@@ -109,10 +110,10 @@ with tab_tit:
             with c_liq:
                 with st.form("form_liquidar_titulo"):
                     forma_liq = st.selectbox(
-                        "Forma de Pagamento / Recebimento",
+                        "Meio de Liquidação",
                         ["PIX", "TRANSFERENCIA", "BOLETO", "DEBITO", "CREDITO", "DINHEIRO"],
                     )
-                    if st.form_submit_button("✅ Confirmar Liquidação no Caixa", type="primary", use_container_width=True):
+                    if st.form_submit_button("Confirmar Liquidação no Caixa", icon=":material/check_circle:", type="primary", use_container_width=True):
                         try:
                             liquidar_titulo(
                                 titulo_id=int(sel_t["id"]),
@@ -127,7 +128,7 @@ with tab_tit:
                 if sel_t["origem_modulo"] == "MANUAL":
                     st.write("")
                     st.write("")
-                    if st.button("❌ Cancelar Título Manual", use_container_width=True):
+                    if st.button("Cancelar Título Manual", icon=":material/cancel:", use_container_width=True):
                         try:
                             cancelar_titulo_manual(titulo_id=int(sel_t["id"]), usuario_id=int(user["id"]))
                             st.warning("Título manual cancelado.")
@@ -156,7 +157,7 @@ with tab_novo:
             c1, c2 = st.columns(2)
             cat_sel = c1.selectbox("Categoria*", list(cat_map.keys())) if cat_map else None
             valor = c2.number_input("Valor (R$)*", min_value=0.01, value=250.00, step=10.00)
-            desc = st.text_input("Descrição*", placeholder="Ex.: Conta de Energia Elétrica — Nov/2026")
+            desc = st.text_input("Descrição*", placeholder="Ex.: Conta de Energia Elétrica - Nov/2026")
             c3, c4, c5 = st.columns(3)
             dt_comp = c3.date_input("Data Competência", value=date.today())
             dt_venc = c4.date_input("Data Vencimento", value=date.today() + timedelta(days=5))
@@ -166,7 +167,7 @@ with tab_novo:
             )
             forn_opts = {"Nenhum": None, **{f["nome_fantasia"]: int(f["id"]) for f in forns}}
             forn_sel = st.selectbox("Fornecedor (opcional)", list(forn_opts.keys())) if tipo_novo == "PAGAR" else "Nenhum"
-            liquidar_agora = st.checkbox("Já pago/recebido (lançar imediatamente no Fluxo de Caixa)")
+            liquidar_agora = st.checkbox("Já liquidado (lançar imediatamente no Fluxo de Caixa)")
 
             if st.form_submit_button("Salvar Lançamento Financeiro", type="primary"):
                 if not cat_sel:
@@ -200,8 +201,8 @@ with tab_caixa:
             pd.DataFrame(
                 [
                     {
-                        "Data/Hora": fmt_datetime(m["data_movimentacao"]),
-                        "Fluxo": "🟢 ENTRADA" if m["tipo_fluxo"] == "ENTRADA" else "🔴 SAÍDA",
+                        "Data e Hora": fmt_datetime(m["data_movimentacao"]),
+                        "Fluxo": "ENTRADA" if m["tipo_fluxo"] == "ENTRADA" else "SAÍDA",
                         "Valor": fmt_brl(m["valor"]),
                         "Forma": m["forma_pagamento"],
                         "Origem": m["origem_modulo"],

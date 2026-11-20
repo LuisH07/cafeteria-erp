@@ -7,11 +7,12 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-PALETTE_PRIMARY = "#6F4E37"
-PALETTE_SECONDARY = "#C17C47"
-PALETTE_ACCENT = "#2E7D32"
-PALETTE_DANGER = "#B83B2A"
-PALETTE_DARK = "#3B281E"
+PALETTE_PRIMARY = "#4A2C1D"
+PALETTE_SECONDARY = "#C18553"
+PALETTE_ACCENT = "#8B5A2B"
+PALETTE_DANGER = "#7A2E20"
+PALETTE_DARK = "#2B1810"
+PALETTE_SOFT = "#D8C2AA"
 
 
 def chart_receita_cmv_temporal(df: pd.DataFrame) -> go.Figure:
@@ -112,7 +113,7 @@ def chart_heatmap_horarios(df: pd.DataFrame) -> go.Figure:
         color_continuous_scale="YlOrBr",
         text_auto=True,
         aspect="auto",
-        title="Mapa de Calor — Horários de Pico (Quantidade de Vendas)",
+        title="Mapa de Calor - Horários de Pico (Quantidade de Vendas)",
     )
     fig.update_layout(margin={"t": 55, "b": 40, "l": 40, "r": 20})
     return fig
@@ -184,7 +185,7 @@ def chart_dre_waterfall(receita: float, cmv: float, perdas: float, despesas: flo
                 "Receita Vendas",
                 "(-) CMV Insumos",
                 "(-) Perdas Operac.",
-                "(-) Despesas Fixas/Op.",
+                "(-) Despesas Operacionais",
                 "Resultado Líquido",
             ],
             y=[receita, -cmv, -perdas, -despesas, lucro_liq],
@@ -246,6 +247,6 @@ def chart_fluxo_caixa_mensal(df: pd.DataFrame) -> go.Figure:
         legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "x": 0},
         margin={"t": 60, "b": 40, "l": 40, "r": 40},
     )
-    fig.update_yaxes(title_text="Entradas / Saídas (R$)", secondary_y=False)
+    fig.update_yaxes(title_text="Entradas e Saídas (R$)", secondary_y=False)
     fig.update_yaxes(title_text="Saldo Acumulado (R$)", secondary_y=True)
     return fig

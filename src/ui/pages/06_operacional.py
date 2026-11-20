@@ -28,12 +28,17 @@ can_prepare = user_can(user, "operacional:prepare")
 can_loss = user_can(user, "operacional:loss")
 
 render_page_header(
-    "☕ Operacional — Fila do Barista & Controle de Perdas",
+    "Operação do Barista - Fila e Perdas",
     "Execução da atividade principal da cafeteria com controle de SLA de preparo e rastreabilidade de desperdícios.",
+    icon_name="coffee",
 )
 
 tab_fila, tab_hist, tab_perdas = st.tabs(
-    ["🔥 Fila Ativa (Barista)", "✅ Ordens Concluídas", "⚠️ Registro de Perdas / Descartes"]
+    [
+        ":material/local_cafe: Fila Ativa (Barista)",
+        ":material/task_alt: Ordens Concluídas",
+        ":material/warning: Registro de Perdas",
+    ]
 )
 
 # -----------------------------------------------------------------------------
@@ -48,12 +53,12 @@ with tab_fila:
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.subheader(f"🟡 Na Fila ({len(na_fila)})")
+        st.subheader(f":material/schedule: Na Fila ({len(na_fila)})")
         if not na_fila:
             st.caption("Nenhum pedido aguardando.")
         for o in na_fila:
             with st.container(border=True):
-                prio = "🔥 ALTA" if o["prioridade"] == "ALTA" else "Normal"
+                prio = ":material/priority_high: ALTA" if o["prioridade"] == "ALTA" else "Normal"
                 st.markdown(f"**{o['numero_venda']}** · `{o['canal_venda']}` · {prio}")
                 st.write(f"**Cliente:** {o['cliente_nome']}")
                 st.write(f"**Itens:** {o['itens_resumo']}")
@@ -63,7 +68,13 @@ with tab_fila:
                 if o["observacoes"]:
                     st.caption(f"Obs.: {o['observacoes']}")
                 if can_prepare:
-                    if st.button("▶️ Iniciar Preparo", key=f"btn_ini_{o['id']}", type="primary", use_container_width=True):
+                    if st.button(
+                        "Iniciar Preparo",
+                        icon=":material/play_arrow:",
+                        key=f"btn_ini_{o['id']}",
+                        type="primary",
+                        use_container_width=True,
+                    ):
                         try:
                             avancar_ordem_preparo(
                                 ordem_id=int(o["id"]),
@@ -75,7 +86,7 @@ with tab_fila:
                             st.error(str(exc))
 
     with col2:
-        st.subheader(f"🟠 Em Preparo ({len(em_prep)})")
+        st.subheader(f":material/local_fire_department: Em Preparo ({len(em_prep)})")
         if not em_prep:
             st.caption("Nenhum pedido em preparo.")
         for o in em_prep:
@@ -89,7 +100,13 @@ with tab_fila:
                 if o["observacoes"]:
                     st.caption(f"Obs.: {o['observacoes']}")
                 if can_prepare:
-                    if st.button("✅ Marcar Pronto", key=f"btn_pronto_{o['id']}", type="primary", use_container_width=True):
+                    if st.button(
+                        "Marcar Pronto",
+                        icon=":material/check_circle:",
+                        key=f"btn_pronto_{o['id']}",
+                        type="primary",
+                        use_container_width=True,
+                    ):
                         try:
                             avancar_ordem_preparo(
                                 ordem_id=int(o["id"]),
@@ -101,7 +118,7 @@ with tab_fila:
                             st.error(str(exc))
 
     with col3:
-        st.subheader(f"🟢 Prontos p/ Entrega ({len(prontos)})")
+        st.subheader(f":material/task_alt: Prontos para Entrega ({len(prontos)})")
         if not prontos:
             st.caption("Nenhum pedido pronto aguardando retirada.")
         for o in prontos:
@@ -114,7 +131,12 @@ with tab_fila:
                     f"(meta: {fmt_seconds(o['tempo_estimado_seg'])})"
                 )
                 if can_prepare:
-                    if st.button("📦 Confirmar Entrega", key=f"btn_ent_{o['id']}", use_container_width=True):
+                    if st.button(
+                        "Confirmar Entrega",
+                        icon=":material/local_shipping:",
+                        key=f"btn_ent_{o['id']}",
+                        use_container_width=True,
+                    ):
                         try:
                             avancar_ordem_preparo(
                                 ordem_id=int(o["id"]),
@@ -160,17 +182,17 @@ with tab_hist:
 # -----------------------------------------------------------------------------
 with tab_perdas:
     st.caption(
-        "Cada perda registrada baixa automaticamente o saldo do insumo (`SAIDA_PERDA`) "
-        "e contabiliza o custo estimado para a DRE e o Dashboard BI."
+        "Cada perda registrada atualiza automaticamente o saldo em estoque "
+        "e contabiliza o custo correspondente no resultado financeiro."
     )
     if can_loss:
         insumos = list_insumos(apenas_ativos=True)
         if insumos:
             imap = {
-                f"{i['sku']} — {i['nome']} (saldo: {fmt_qty(i['estoque_atual'], i['unidade_medida'])})": i
+                f"{i['sku']} - {i['nome']} (saldo: {fmt_qty(i['estoque_atual'], i['unidade_medida'])})": i
                 for i in insumos
             }
-            sel_i = imap[st.selectbox("Insumo Perdido / Descartado", list(imap.keys()), key="perda_ins_sel")]
+            sel_i = imap[st.selectbox("Insumo Perdido", list(imap.keys()), key="perda_ins_sel")]
             with st.form("form_registrar_perda"):
                 c1, c2 = st.columns(2)
                 qtd = c1.number_input(
@@ -185,7 +207,7 @@ with tab_perdas:
                     ["VENCIMENTO", "QUEBRA_PREPARO", "DESPERDICIO_BARISTA", "CONTAMINACAO", "OUTRO"],
                 )
                 obs = st.text_input("Observações", placeholder="Ex.: Leite aberto fora da temperatura ideal")
-                if st.form_submit_button("⚠️ Registrar Perda e Baixar Estoque", type="primary"):
+                if st.form_submit_button("Registrar Perda e Baixar Estoque", icon=":material/warning:", type="primary"):
                     try:
                         res = registrar_perda(
                             insumo_id=int(sel_i["id"]),
@@ -209,7 +231,7 @@ with tab_perdas:
             pd.DataFrame(
                 [
                     {
-                        "Data/Hora": fmt_datetime(p["criado_em"]),
+                        "Data e Hora": fmt_datetime(p["criado_em"]),
                         "Insumo": p["insumo_nome"],
                         "Quantidade": fmt_qty(p["quantidade"], p["unidade_medida"]),
                         "Motivo": p["motivo"],

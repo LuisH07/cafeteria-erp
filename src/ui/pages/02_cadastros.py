@@ -40,18 +40,19 @@ user = ensure_page_access("cadastros")
 can_write = user_can(user, "cadastros:write")
 
 render_page_header(
-    "📋 Cadastros & Ficha Técnica",
-    "Gestão central das entidades da cafeteria (exclusão lógica preservando integridade histórica).",
+    "Catálogo e Cadastros",
+    "Gestão de produtos do cardápio, receitas, insumos, fornecedores e clientes da cafeteria.",
+    icon_name="clipboard-list",
 )
 
 tabs = st.tabs(
     [
-        "☕ Produtos (Cardápio)",
-        "🧪 Ficha Técnica (Receitas)",
-        "📦 Insumos",
-        "🚚 Fornecedores",
-        "👥 Clientes",
-        "🏷️ Categorias",
+        ":material/local_cafe: Produtos (Cardápio)",
+        ":material/science: Ficha Técnica (Receitas)",
+        ":material/inventory_2: Insumos",
+        ":material/local_shipping: Fornecedores",
+        ":material/group: Clientes",
+        ":material/sell: Categorias",
     ]
 )
 
@@ -76,7 +77,7 @@ with tabs[0]:
                     "Margem Est.": f"{float(p['margem_estimada_pct']):.1f}%",
                     "Insumos Ficha": p["qtd_insumos_ficha"],
                     "Preparo (s)": p["tempo_preparo_estimado_seg"],
-                    "Ativo": "✅" if p["ativo"] else "❌",
+                    "Ativo": "Ativo" if p["ativo"] else "Inativo",
                 }
                 for p in produtos
             ]
@@ -118,8 +119,8 @@ with tabs[0]:
 
         with col_edit:
             if produtos and cats_prod:
-                st.subheader("Editar / Inativar Produto")
-                prod_map = {f"{p['sku']} — {p['nome']}": p for p in produtos}
+                st.subheader("Editar Produto")
+                prod_map = {f"{p['sku']} - {p['nome']}": p for p in produtos}
                 sel_p = prod_map[st.selectbox("Selecione o Produto", list(prod_map.keys()), key="sel_edit_prod")]
                 cat_map = {c["nome"]: int(c["id"]) for c in cats_prod}
                 cat_names = list(cat_map.keys())
@@ -155,7 +156,7 @@ with tabs[0]:
                         except DomainError as exc:
                             st.error(str(exc))
 
-                with st.expander("📈 Histórico de Preços deste Produto"):
+                with st.expander(":material/trending_up: Histórico de Preços deste Produto"):
                     hist = list_historico_precos(int(sel_p["id"]))
                     if hist:
                         st.dataframe(
@@ -179,14 +180,14 @@ with tabs[0]:
 # -----------------------------------------------------------------------------
 with tabs[1]:
     st.caption(
-        "A Ficha Técnica vincula cada produto do cardápio aos insumos consumidos no preparo/revenda, "
+        "A Ficha Técnica vincula cada produto do cardápio aos insumos consumidos no preparo ou revenda, "
         "garantindo baixa automática de estoque e cálculo exato do CMV em cada venda."
     )
     produtos_ativos = list_produtos(apenas_ativos=True)
     insumos_ativos = list_insumos(apenas_ativos=True)
 
     if produtos_ativos:
-        p_map = {f"{p['sku']} — {p['nome']} ({fmt_brl(p['preco_venda'])})": p for p in produtos_ativos}
+        p_map = {f"{p['sku']} - {p['nome']} ({fmt_brl(p['preco_venda'])})": p for p in produtos_ativos}
         p_sel = p_map[st.selectbox("Selecione o Produto", list(p_map.keys()), key="sel_prod_ficha")]
         ficha = list_ficha_tecnica(int(p_sel["id"]))
 
@@ -223,8 +224,8 @@ with tabs[1]:
             c_add, c_rem = st.columns(2)
             with c_add:
                 with st.form("form_add_ficha"):
-                    st.markdown("**Adicionar / Atualizar Insumo na Receita**")
-                    ins_map = {f"{i['sku']} — {i['nome']} ({i['unidade_medida']})": i for i in insumos_ativos}
+                    st.markdown("**Configurar Insumo na Receita**")
+                    ins_map = {f"{i['sku']} - {i['nome']} ({i['unidade_medida']})": i for i in insumos_ativos}
                     ins_sel = ins_map[st.selectbox("Insumo", list(ins_map.keys()))]
                     qtd = st.number_input(
                         f"Quantidade consumida ({ins_sel['unidade_medida']})",
@@ -280,7 +281,7 @@ with tabs[2]:
                         "Custo Médio": f"R$ {float(i['custo_medio_atual']):.4f}",
                         "Localização": i["localizacao"],
                         "Perecível": "Sim" if i["perecivel"] else "Não",
-                        "Ativo": "✅" if i["ativo"] else "❌",
+                        "Ativo": "Ativo" if i["ativo"] else "Inativo",
                     }
                     for i in insumos
                 ]
@@ -300,7 +301,7 @@ with tabs[2]:
                 cat_sel = st.selectbox("Categoria*", list(cat_map.keys())) if cat_map else None
                 un = st.selectbox("Unidade Base*", ["g", "ml", "un"])
                 minimo = st.number_input("Estoque Mínimo", min_value=0.0, value=500.0, step=10.0)
-                custo = st.number_input("Custo Médio Inicial (R$/un base)", min_value=0.0, value=0.05, step=0.005, format="%.4f")
+                custo = st.number_input("Custo Médio Inicial (R$ por unidade)", min_value=0.0, value=0.05, step=0.005, format="%.4f")
                 loc = st.text_input("Localização Física", value="Estoque Central")
                 perec = st.checkbox("Item Perecível")
                 if st.form_submit_button("Cadastrar Insumo", type="primary"):
@@ -327,7 +328,7 @@ with tabs[2]:
         with c_e:
             if insumos and cats_ins:
                 st.subheader("Editar Insumo")
-                imap = {f"{i['sku']} — {i['nome']}": i for i in insumos}
+                imap = {f"{i['sku']} - {i['nome']}": i for i in insumos}
                 sel_i = imap[st.selectbox("Selecione o Insumo", list(imap.keys()), key="sel_edit_ins")]
                 cat_map = {c["nome"]: int(c["id"]) for c in cats_ins}
                 cat_names = list(cat_map.keys())
@@ -372,7 +373,7 @@ with tabs[3]:
                         "Telefone": f["telefone"] or "-",
                         "E-mail": f["email"] or "-",
                         "Prazo (dias)": f["prazo_pagamento_dias"],
-                        "Ativo": "✅" if f["ativo"] else "❌",
+                        "Ativo": "Ativo" if f["ativo"] else "Inativo",
                     }
                     for f in fornecedores
                 ]
@@ -446,11 +447,11 @@ with tabs[4]:
                 [
                     {
                         "Nome": c["nome"],
-                        "CPF/CNPJ": c["cpf_cnpj"] or "-",
+                        "Documento": c["cpf_cnpj"] or "-",
                         "Tipo": c["tipo_cliente"],
                         "Telefone": c["telefone"] or "-",
                         "E-mail": c["email"] or "-",
-                        "Ativo": "✅" if c["ativo"] else "❌",
+                        "Ativo": "Ativo" if c["ativo"] else "Inativo",
                     }
                     for c in clientes
                 ]
@@ -463,7 +464,7 @@ with tabs[4]:
         with c_n:
             with st.form("form_novo_cli"):
                 st.subheader("Novo Cliente")
-                nome = st.text_input("Nome Completo / Empresa*")
+                nome = st.text_input("Nome ou Razão Social*")
                 doc = st.text_input("CPF ou CNPJ (opcional)")
                 tipo = st.selectbox("Tipo de Cliente", ["FIDELIDADE", "BALCAO", "CORPORATIVO"])
                 tel = st.text_input("Telefone")
@@ -519,7 +520,7 @@ with tabs[5]:
         st.dataframe(
             pd.DataFrame(
                 [
-                    {"ID": c["id"], "Nome": c["nome"], "Tipo": c["tipo"], "Ativa": "✅" if c["ativo"] else "❌"}
+                    {"ID": c["id"], "Nome": c["nome"], "Tipo": c["tipo"], "Status": "Ativa" if c["ativo"] else "Inativa"}
                     for c in categorias
                 ]
             ),

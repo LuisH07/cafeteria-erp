@@ -29,14 +29,17 @@ user = ensure_page_access("compras")
 can_write = user_can(user, "compras:write")
 
 render_page_header(
-    "🛒 Compras & Suprimentos",
+    "Compras e Suprimentos",
     "Registro de aquisições de insumos com entrada automática no estoque, recálculo de custo médio e conta a pagar.",
+    icon_name="shopping-cart",
 )
 
 if "compra_cart" not in st.session_state:
     st.session_state["compra_cart"] = []
 
-tab_nova, tab_hist = st.tabs(["➕ Novo Pedido de Compra", "📄 Pedidos e Recebimentos"])
+tab_nova, tab_hist = st.tabs(
+    [":material/add_shopping_cart: Novo Pedido de Compra", ":material/description: Pedidos e Recebimentos"]
+)
 
 # -----------------------------------------------------------------------------
 # ABA 1: NOVO PEDIDO DE COMPRA
@@ -52,7 +55,7 @@ with tab_nova:
             st.warning("Cadastre ao menos um fornecedor e um insumo ativos antes de registrar compras.")
         else:
             st.subheader("1. Adicionar Insumos ao Pedido")
-            ins_map = {f"{i['sku']} — {i['nome']} (base: {i['unidade_medida']})": i for i in insumos}
+            ins_map = {f"{i['sku']} - {i['nome']} (base: {i['unidade_medida']})": i for i in insumos}
             sel_ins = ins_map[st.selectbox("Selecione o Insumo", list(ins_map.keys()), key="cmp_ins_sel")]
             base_un = sel_ins["unidade_medida"]
 
@@ -126,7 +129,7 @@ with tab_nova:
                 total_pedido = sum(it["subtotal"] for it in cart)
                 st.metric("Total do Pedido de Compra", fmt_brl(total_pedido))
 
-                if st.button("🗑️ Limpar Itens do Pedido"):
+                if st.button("Limpar Itens do Pedido", icon=":material/delete:"):
                     st.session_state["compra_cart"] = []
                     st.rerun()
 
@@ -142,12 +145,12 @@ with tab_nova:
                         "Forma de Pagamento*",
                         ["BOLETO", "PIX", "TRANSFERENCIA", "CARTAO_CORP", "DINHEIRO"],
                     )
-                    obs = st.text_input("Observações", placeholder="Ex.: NF 4521 — entrega matinal")
+                    obs = st.text_input("Observações", placeholder="Ex.: NF 4521 - entrega matinal")
                     c_chk1, c_chk2 = st.columns(2)
                     receber_agora = c_chk1.checkbox("Já recebido (dar entrada no Estoque e Financeiro agora)", value=True)
-                    liquidar_avista = c_chk2.checkbox("Liquidar no caixa se prazo = 0 e PIX/Dinheiro", value=False)
+                    liquidar_avista = c_chk2.checkbox("Liquidar no caixa se prazo = 0 e PIX ou Dinheiro", value=False)
 
-                    if st.form_submit_button("✅ Salvar Pedido de Compra", type="primary", use_container_width=True):
+                    if st.form_submit_button("Salvar Pedido de Compra", icon=":material/check_circle:", type="primary", use_container_width=True):
                         try:
                             compra = criar_compra(
                                 fornecedor_id=f_map[forn_sel],
@@ -197,8 +200,8 @@ with tab_hist:
         )
 
         st.divider()
-        sel_map = {f"{c['numero_pedido']} — {c['fornecedor_nome']} ({c['status']})": int(c["id"]) for c in compras}
-        sel_id = sel_map[st.selectbox("Inspecionar / Ações no Pedido", list(sel_map.keys()))]
+        sel_map = {f"{c['numero_pedido']} - {c['fornecedor_nome']} ({c['status']})": int(c["id"]) for c in compras}
+        sel_id = sel_map[st.selectbox("Selecionar Pedido", list(sel_map.keys()))]
         det = get_compra_detalhes(sel_id)
 
         st.markdown(
@@ -226,7 +229,7 @@ with tab_hist:
         if can_write and det["status"] in {"RASCUNHO", "CONFIRMADA"}:
             c_rec, c_can = st.columns(2)
             with c_rec:
-                if st.button("📥 Confirmar Recebimento (Estoque + Financeiro)", type="primary", use_container_width=True):
+                if st.button("Confirmar Recebimento (Estoque + Financeiro)", icon=":material/inventory:", type="primary", use_container_width=True):
                     try:
                         receber_compra(compra_id=sel_id, usuario_id=int(user["id"]))
                         st.success("Compra recebida! Estoque atualizado e Conta a Pagar gerada.")
@@ -236,7 +239,7 @@ with tab_hist:
             with c_can:
                 with st.form("form_cancelar_compra"):
                     motivo_c = st.text_input("Motivo do cancelamento*")
-                    if st.form_submit_button("❌ Cancelar Pedido", use_container_width=True):
+                    if st.form_submit_button("Cancelar Pedido", icon=":material/cancel:", use_container_width=True):
                         try:
                             cancelar_compra(compra_id=sel_id, motivo=motivo_c, usuario_id=int(user["id"]))
                             st.warning("Pedido cancelado.")

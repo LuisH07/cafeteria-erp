@@ -41,8 +41,9 @@ from src.ui.components.layout import (
 user = ensure_page_access("dashboard_bi")
 
 render_page_header(
-    "📊 Dashboard BI — Inteligência de Negócios (2ª VA)",
-    "Análise gerencial em tempo real conectada exclusivamente ao PostgreSQL/Supabase do ERP.",
+    "Dashboard BI - Inteligência de Negócios",
+    "Indicadores de vendas, estoque, operação do barista e resultado financeiro em tempo real.",
+    icon_name="bar-chart-3",
 )
 
 opts = get_bi_filter_options()
@@ -70,7 +71,7 @@ insights = get_insights_automaticos(
     data_inicio=data_inicio, data_fim=data_fim, canais=canais_filter
 )
 if insights:
-    with st.expander("💡 Diagnósticos e Alertas Automáticos do Período", expanded=True):
+    with st.expander(":material/lightbulb: Diagnósticos e Alertas Automáticos do Período", expanded=True):
         for ins in insights:
             msg = f"**{ins['titulo']}:** {ins['descricao']}"
             if ins["nivel"] == "error":
@@ -82,10 +83,10 @@ if insights:
 
 tab_exec, tab_est, tab_op, tab_fin = st.tabs(
     [
-        "📈 Executivo & Comercial",
-        "📦 Estoque, Compras & Perdas",
-        "⏱️ Operacional & SLA (Barista)",
-        "💰 Financeiro, DRE & Caixa",
+        ":material/trending_up: Desempenho Comercial",
+        ":material/inventory_2: Suprimentos e Perdas",
+        ":material/timer: Operação e SLA",
+        ":material/account_balance_wallet: Resultado Financeiro",
     ]
 )
 
@@ -158,7 +159,7 @@ with tab_exec:
     )
     if not df_abc.empty:
         st.plotly_chart(chart_curva_abc(df_abc), use_container_width=True)
-        with st.expander("📋 Tabela Detalhada — Desempenho e Margem por Produto"):
+        with st.expander(":material/table_chart: Tabela Detalhada - Desempenho e Margem por Produto"):
             st.dataframe(
                 df_abc[
                     [
@@ -213,7 +214,7 @@ with tab_est:
                 y="custo_total",
                 text_auto=".2f",
                 title="Custo de Perdas por Motivo (R$)",
-                color_discrete_sequence=["#B83B2A"],
+                color_discrete_sequence=["#7A2E20"],
             )
             st.plotly_chart(fig_pm, use_container_width=True)
         else:
@@ -250,7 +251,8 @@ with tab_est:
                 y="custo_unitario_medio",
                 color="insumo_nome",
                 markers=True,
-                title="Evolução do Custo Unitário de Compra por Insumo (R$/un base)",
+                title="Evolução do Custo Unitário de Compra por Insumo (R$ por unidade)",
+                color_discrete_sequence=["#3E2419", "#8B5A2B", "#C68B59", "#6F4E37", "#A67B5B", "#7A2E20"],
             )
             st.plotly_chart(fig_custo, use_container_width=True)
 
@@ -345,7 +347,7 @@ with tab_fin:
             barmode="group",
             text_auto=".2f",
             title="Distribuição de Títulos Abertos por Faixa de Vencimento (R$)",
-            color_discrete_map={"PAGAR": "#B83B2A", "RECEBER": "#2E7D32"},
+            color_discrete_map={"PAGAR": "#7A2E20", "RECEBER": "#6F4E37"},
         )
         st.plotly_chart(fig_ag, use_container_width=True)
         st.dataframe(df_aging, use_container_width=True, hide_index=True)

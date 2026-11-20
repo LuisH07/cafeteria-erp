@@ -28,8 +28,9 @@ can_create = user_can(user, "vendas:create")
 can_cancel = user_can(user, "vendas:cancel")
 
 render_page_header(
-    "💳 Vendas & PDV",
+    "Vendas e Frente de Caixa",
     "Registro de pedidos com baixa automática de insumos via ficha técnica, envio à fila do barista e lançamento financeiro.",
+    icon_name="credit-card",
 )
 
 if "pdv_cart" not in st.session_state:
@@ -37,7 +38,9 @@ if "pdv_cart" not in st.session_state:
 if "last_venda_id" not in st.session_state:
     st.session_state["last_venda_id"] = None
 
-tab_pdv, tab_hist = st.tabs(["🛍️ Frente de Caixa (PDV)", "🧾 Histórico, Comprovantes e Cancelamentos"])
+tab_pdv, tab_hist = st.tabs(
+    [":material/point_of_sale: Frente de Caixa (PDV)", ":material/receipt_long: Histórico, Comprovantes e Cancelamentos"]
+)
 
 # -----------------------------------------------------------------------------
 # ABA 1: PDV
@@ -64,13 +67,13 @@ with tab_pdv:
                     p for p in produtos if cat_f == "Todas" or p["categoria_nome"] == cat_f
                 ]
                 prod_map = {
-                    f"{p['nome']} — {fmt_brl(p['preco_venda'])} ({p['categoria_nome']})": p
+                    f"{p['nome']} - {fmt_brl(p['preco_venda'])} ({p['categoria_nome']})": p
                     for p in prods_filtrados
                 }
                 with st.form("form_add_pdv"):
                     sel_p = prod_map[st.selectbox("Produto", list(prod_map.keys()))]
                     qtd = st.number_input("Quantidade", min_value=1, value=1, step=1)
-                    if st.form_submit_button("➕ Adicionar ao Carrinho", use_container_width=True):
+                    if st.form_submit_button("Adicionar ao Carrinho", icon=":material/add_shopping_cart:", use_container_width=True):
                         cart = st.session_state["pdv_cart"]
                         encontrado = False
                         for item in cart:
@@ -139,7 +142,7 @@ with tab_pdv:
                         st.success("Todos os insumos da ficha técnica estão disponíveis em estoque.")
 
                     subtotal = round(sum(it["subtotal"] for it in cart), 2)
-                    if st.button("🗑️ Limpar Carrinho", use_container_width=True):
+                    if st.button("Limpar Carrinho", icon=":material/delete:", use_container_width=True):
                         st.session_state["pdv_cart"] = []
                         st.rerun()
 
@@ -170,7 +173,8 @@ with tab_pdv:
                         st.markdown(f"### Total a Pagar: **{fmt_brl(total_liq)}**")
 
                         submitted = st.form_submit_button(
-                            "✅ Finalizar Venda",
+                            "Finalizar Venda",
+                            icon=":material/check_circle:",
                             type="primary",
                             use_container_width=True,
                             disabled=not check["disponivel"],
@@ -214,7 +218,7 @@ with tab_hist:
                 [
                     {
                         "Pedido": v["numero_venda"],
-                        "Data/Hora": fmt_datetime(v["data_venda"]),
+                        "Data e Hora": fmt_datetime(v["data_venda"]),
                         "Cliente": v["cliente_nome"],
                         "Canal": v["canal_venda"],
                         "Pagamento": v["forma_pagamento"],
@@ -233,10 +237,10 @@ with tab_hist:
 
         st.divider()
         v_map = {
-            f"{v['numero_venda']} — {v['cliente_nome']} ({fmt_brl(v['valor_total'])} | {v['status']})": int(v["id"])
+            f"{v['numero_venda']} - {v['cliente_nome']} ({fmt_brl(v['valor_total'])} | {v['status']})": int(v["id"])
             for v in vendas
         }
-        sel_vid = v_map[st.selectbox("Selecionar Venda para Comprovante / Ações", list(v_map.keys()))]
+        sel_vid = v_map[st.selectbox("Selecionar Venda", list(v_map.keys()))]
         det = get_venda_detalhes(sel_vid)
 
         col_rec, col_act = st.columns([1.2, 1])
@@ -244,20 +248,21 @@ with tab_hist:
             render_receipt_card(det, key_prefix="hist_receipt")
 
         with col_act:
-            st.subheader("Detalhes de Integração")
-            st.write(f"- **CMV Total (snapshot):** {fmt_brl(det['custo_total_cmv'])}")
-            st.write(f"- **Status Preparo (Barista):** `{det.get('status_preparo', '-')}`")
-            st.write(f"- **Status Financeiro:** `{det.get('status_financeiro', '-')}`")
+            st.subheader("Detalhes do Pedido")
+            st.write(f"- **Custo dos Insumos (CMV):** {fmt_brl(det['custo_total_cmv'])}")
+            st.write(f"- **Status do Preparo:** `{det.get('status_preparo', '-')}`")
+            st.write(f"- **Situação Financeira:** `{det.get('status_financeiro', '-')}`")
 
             if det["status"] == "CONCLUIDA" and can_cancel:
                 st.divider()
                 st.warning(
-                    "Cancelar venda não apaga o histórico: estorna estoque se ainda estiver NA_FILA "
-                    "(ou registra perda se já em preparo) e estorna o lançamento financeiro."
+                    "O cancelamento preserva o histórico: devolve os insumos ao estoque se o pedido "
+                    "ainda estiver na fila (ou contabiliza como perda se já estiver em preparo) "
+                    "e estorna o lançamento financeiro."
                 )
                 with st.form("form_cancelar_venda"):
                     motivo = st.text_input("Motivo do Cancelamento*", placeholder="Ex.: Erro de lançamento no caixa")
-                    if st.form_submit_button("❌ Confirmar Cancelamento / Estorno", use_container_width=True):
+                    if st.form_submit_button("Confirmar Cancelamento", icon=":material/cancel:", use_container_width=True):
                         try:
                             res = cancelar_venda(
                                 venda_id=sel_vid,

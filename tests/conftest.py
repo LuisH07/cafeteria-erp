@@ -102,7 +102,7 @@ def clean_db(pg_engine) -> dict[str, Any]:
             text(
                 """
                 INSERT INTO usuarios (google_sub, email, nome, perfil)
-                VALUES ('sub-test-admin', 'assuero.ximenes@ufape.edu.br', 'Admin Teste', 'ADMIN')
+                VALUES ('sub-test-admin', 'admin.teste@graodoagreste.com.br', 'Admin Teste', 'ADMIN')
                 RETURNING id
                 """
             )

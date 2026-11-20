@@ -221,3 +221,5 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+.streamlit/secrets.*.toml
+.streamlit/secrets.prod.toml

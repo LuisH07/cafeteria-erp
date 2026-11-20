@@ -75,28 +75,38 @@ def _reset_database() -> None:
 
 
 def _seed_usuarios() -> dict[str, int]:
-    """Cria usuários iniciais da cafeteria (incluindo conta do professor como ADMIN)."""
+    """Cria usuários operacionais do seed e pré-cadastra o avaliador sem operações falsas."""
     users_spec = [
-        ("seed-admin-prof", "assuero.ximenes@ufape.edu.br", "Prof. Assuero Ximenes", "ADMIN"),
-        ("seed-gerente-1", "gerencia@graodoagreste.com.br", "Camila Ferreira (Gerente)", "GERENTE"),
-        ("seed-caixa-1", "caixa@graodoagreste.com.br", "Lucas Almeida (Caixa)", "CAIXA"),
-        ("seed-barista-1", "barista1@graodoagreste.com.br", "Marina Costa (Barista)", "BARISTA"),
-        ("seed-barista-2", "barista2@graodoagreste.com.br", "Rafael Souza (Barista)", "BARISTA"),
-        ("seed-estoquista-1", "estoque@graodoagreste.com.br", "Beatriz Lima (Estoquista)", "ESTOQUISTA"),
+        ("seed-admin-1", "admin@graodoagreste.com.br", "Administrador (Cafeteria)", "ADMIN", True),
+        ("seed-gerente-1", "gerencia@graodoagreste.com.br", "Camila Ferreira (Gerente)", "GERENTE", True),
+        ("seed-caixa-1", "caixa@graodoagreste.com.br", "Lucas Almeida (Caixa)", "CAIXA", True),
+        ("seed-barista-1", "barista1@graodoagreste.com.br", "Marina Costa (Barista)", "BARISTA", True),
+        ("seed-barista-2", "barista2@graodoagreste.com.br", "Rafael Souza (Barista)", "BARISTA", True),
+        ("seed-estoquista-1", "estoque@graodoagreste.com.br", "Beatriz Lima (Estoquista)", "ESTOQUISTA", True),
+        ("pre-admin-prof", "assuero.ximenes@ufape.edu.br", "Prof. Assuero Ximenes", "ADMIN", False),
     ]
     ids: dict[str, int] = {}
     with get_transaction() as conn:
-        for sub, email, nome, perfil in users_spec:
+        for sub, email, nome, perfil, has_logged_in in users_spec:
             row = conn.execute(
                 text(
                     """
                     INSERT INTO usuarios (google_sub, email, nome, perfil, ativo, ultimo_login_em)
-                    VALUES (:sub, :email, :nome, :perfil, TRUE, NOW())
+                    VALUES (
+                        :sub, :email, :nome, :perfil, TRUE,
+                        CASE WHEN :has_logged_in THEN NOW() ELSE NULL END
+                    )
                     ON CONFLICT (email) DO UPDATE SET nome = EXCLUDED.nome
                     RETURNING id
                     """
                 ),
-                {"sub": sub, "email": email, "nome": nome, "perfil": perfil},
+                {
+                    "sub": sub,
+                    "email": email,
+                    "nome": nome,
+                    "perfil": perfil,
+                    "has_logged_in": has_logged_in,
+                },
             ).scalar()
             ids[sub] = int(row)
     return ids
@@ -340,7 +350,7 @@ def run_seed(reset: bool = False) -> None:
     rng = random.Random(42)
     print("[1/5] Criando usuários operacionais...")
     user_ids = _seed_usuarios()
-    admin_id = user_ids["seed-admin-prof"]
+    admin_id = user_ids["seed-admin-1"]
     gerente_id = user_ids["seed-gerente-1"]
     caixa_id = user_ids["seed-caixa-1"]
     barista1_id = user_ids["seed-barista-1"]

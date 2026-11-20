@@ -26,8 +26,9 @@ user = ensure_page_access("estoque")
 can_adjust = user_can(user, "estoque:adjust")
 
 render_page_header(
-    "📦 Controle de Estoque & Inventário",
+    "Controle de Estoque",
     "Posição em tempo real de insumos, alertas de reposição, ajustes auditados e razão de movimentações.",
+    icon_name="package",
 )
 
 pos_completa = get_estoque_position()
@@ -42,7 +43,11 @@ m3.metric("Críticos (≤ Mínimo)", qtd_criticos, delta_color="inverse" if qtd_
 m4.metric("Em Atenção", qtd_atencao)
 
 tab_pos, tab_mov, tab_inv = st.tabs(
-    ["📊 Posição Atual", "📜 Extrato de Movimentações", "⚖️ Ajuste de Inventário"]
+    [
+        ":material/inventory_2: Posição Atual",
+        ":material/history: Extrato de Movimentações",
+        ":material/tune: Ajuste de Inventário",
+    ]
 )
 
 with tab_pos:
@@ -53,7 +58,7 @@ with tab_pos:
     pos = get_estoque_position(apenas_criticos=apenas_crit, localizacao=loc_sel)
 
     if pos:
-        status_badge = {"CRITICO": "🔴 CRÍTICO", "ATENCAO": "🟡 ATENÇÃO", "SAUDAVEL": "🟢 SAUDÁVEL"}
+        status_badge = {"CRITICO": "CRÍTICO", "ATENCAO": "ATENÇÃO", "SAUDAVEL": "SAUDÁVEL"}
         st.dataframe(
             pd.DataFrame(
                 [
@@ -80,7 +85,7 @@ with tab_pos:
 with tab_mov:
     insumos = list_insumos(apenas_ativos=False)
     f1, f2, f3 = st.columns(3)
-    ins_opts = {"Todos": None, **{f"{i['sku']} — {i['nome']}": int(i["id"]) for i in insumos}}
+    ins_opts = {"Todos": None, **{f"{i['sku']} - {i['nome']}": int(i["id"]) for i in insumos}}
     ins_sel = f1.selectbox("Insumo", list(ins_opts.keys()))
     tipo_sel = f2.selectbox(
         "Tipo de Movimentação",
@@ -107,7 +112,7 @@ with tab_mov:
             pd.DataFrame(
                 [
                     {
-                        "Data/Hora": fmt_datetime(m["criado_em"]),
+                        "Data e Hora": fmt_datetime(m["criado_em"]),
                         "Insumo": m["insumo_nome"],
                         "Tipo": m["tipo_movimentacao"],
                         "Qtd.": fmt_qty(m["quantidade"], m["unidade_medida"]),
@@ -132,12 +137,12 @@ with tab_inv:
     else:
         st.caption(
             "Informe a contagem física apurada no inventário. O sistema calcula automaticamente "
-            "a diferença e registra um evento auditado (`AJUSTE_ENTRADA` ou `AJUSTE_SAIDA`)."
+            "a diferença e registra o ajuste de entrada ou saída no histórico."
         )
         ins_ativos = list_insumos(apenas_ativos=True)
         if ins_ativos:
             imap = {
-                f"{i['sku']} — {i['nome']} (atual: {fmt_qty(i['estoque_atual'], i['unidade_medida'])})": i
+                f"{i['sku']} - {i['nome']} (atual: {fmt_qty(i['estoque_atual'], i['unidade_medida'])})": i
                 for i in ins_ativos
             }
             sel_i = imap[st.selectbox("Selecione o Insumo", list(imap.keys()), key="inv_sel_ins")]
@@ -150,7 +155,7 @@ with tab_inv:
                     format="%.3f",
                 )
                 motivo = st.text_input(
-                    "Motivo / Justificativa*",
+                    "Justificativa*",
                     placeholder="Ex.: Conferência física semanal do balcão",
                 )
                 if st.form_submit_button("Registrar Ajuste de Inventário", type="primary"):
@@ -162,7 +167,7 @@ with tab_inv:
                             usuario_id=int(user["id"]),
                         )
                         st.success(
-                            f"Ajuste `{res['tipo_movimentacao']}` registrado! "
+                            f"Ajuste de inventário registrado! "
                             f"Saldo atualizado de {res['saldo_anterior']} para {res['saldo_posterior']} {sel_i['unidade_medida']}."
                         )
                         st.rerun()

@@ -17,7 +17,7 @@ def build_receipt_text(venda: dict[str, Any]) -> str:
         "       Comprovante Não Fiscal de Venda          ",
         "================================================",
         f"Pedido    : {venda['numero_venda']}",
-        f"Data/Hora : {fmt_datetime(venda['data_venda'])}",
+        f"Data      : {fmt_datetime(venda['data_venda'])}",
         f"Cliente   : {venda['cliente_nome']}",
         f"Canal     : {venda['canal_venda']}",
         f"Pagamento : {venda['forma_pagamento']}",
@@ -48,10 +48,11 @@ def render_receipt_card(venda: dict[str, Any], key_prefix: str = "receipt") -> N
     """Renderiza comprovante visual e botão de download .txt."""
     receipt_txt = build_receipt_text(venda)
     with st.container(border=True):
-        st.subheader(f"🧾 Comprovante — {venda['numero_venda']}")
+        st.subheader(f":material/receipt_long: Comprovante - {venda['numero_venda']}")
         st.code(receipt_txt, language="text")
         st.download_button(
-            label="⬇️ Baixar Comprovante (.txt)",
+            label="Baixar Comprovante (.txt)",
+            icon=":material/download:",
             data=receipt_txt.encode("utf-8"),
             file_name=f"comprovante_{venda['numero_venda']}.txt",
             mime="text/plain",

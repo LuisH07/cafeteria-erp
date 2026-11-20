@@ -52,13 +52,13 @@ Com o sistema, é possível gerenciar cadastros e **fichas técnicas (receitas)*
 | Avaliação | Módulo | Descrição |
 |-----------|--------|-----------|
 | **1ª VA (ERP)** | **Visão Geral** | Resumo diário de vendas, fila aberta do barista, insumos críticos, contas vencendo e gestão de usuários/auditoria |
-| **1ª VA (ERP)** | **Cadastros & Ficha Técnica** | CRUD com exclusão lógica de Categorias, Fornecedores, Clientes, Insumos, Produtos do Cardápio, Receitas e histórico de preços |
+| **1ª VA (ERP)** | **Catálogo e Cadastros** | CRUD com exclusão lógica de Categorias, Fornecedores, Clientes, Insumos, Produtos do Cardápio, Receitas e histórico de preços |
 | **1ª VA (ERP)** | **Compras** | Pedidos com conversão `kg/L → g/ml`, recebimento integrado a estoque, custo médio ponderado e geração de conta a pagar |
-| **1ª VA (ERP)** | **Estoque & Inventário** | Posição em tempo real, alertas de estoque mínimo, ajustes de inventário auditados e razão imutável de movimentações |
-| **1ª VA (ERP)** | **Vendas / PDV** | Carrinho com pré-checagem de insumos, baixa atômica pela ficha técnica, CMV histórico, comprovante `.txt` e estorno seguro |
-| **1ª VA (ERP)** | **Operacional (Barista)** | Fila Kanban (`NA_FILA → EM_PREPARO → PRONTO → ENTREGUE`) com medição de SLA e registro de perdas/descartes |
+| **1ª VA (ERP)** | **Estoque** | Posição em tempo real, alertas de estoque mínimo, ajustes de inventário auditados e razão imutável de movimentações |
+| **1ª VA (ERP)** | **Vendas** | Frente de caixa com pré-checagem de insumos, baixa atômica pela ficha técnica, CMV histórico, comprovante `.txt` e estorno seguro |
+| **1ª VA (ERP)** | **Operação do Barista** | Fila Kanban (`NA_FILA → EM_PREPARO → PRONTO → ENTREGUE`) com medição de SLA e registro de perdas |
 | **1ª VA (ERP)** | **Financeiro** | Contas a pagar e a receber, despesas operacionais, liquidações no caixa, extrato de fluxo de caixa e DRE mensal |
-| **2ª VA (BI)** | **Dashboard BI** | Módulo analítico conectado exclusivamente às 6 views SQL do PostgreSQL (Curva ABC, picos, estoque/perdas, SLA, DRE e aging) |
+| **2ª VA (BI)** | **Dashboard BI** | Módulo analítico conectado exclusivamente às 6 views SQL do PostgreSQL (Desempenho Comercial, Suprimentos e Perdas, Operação e SLA, Resultado Financeiro) |
 
 ### Perfis de acesso (RBAC)
 
@@ -92,7 +92,8 @@ Com o sistema, é possível gerenciar cadastros e **fichas técnicas (receitas)*
 
 ### Autenticação, Qualidade e Práticas
 
-* Google OAuth 2.0 / OpenID Connect (`Authlib`)
+* Google OAuth 2.0 / OpenID Connect (`Authlib`, `httpx` e `itsdangerous`)
+* Ícones vetoriais Lucide (`assets/icons/`) e Google Material Symbols
 * Pytest (testes unitários e de integração transacional em schema isolado)
 * Git & GitHub
 * Conventional Commits

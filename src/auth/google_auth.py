@@ -12,6 +12,7 @@ from src.db.connection import get_transaction
 from src.db.queries import fetch_all, fetch_one
 from src.services.audit_service import log_audit_event
 from src.services.exceptions import AuthorizationError, ValidationError
+from src.ui.components.assets import get_asset_data_uri
 
 
 def _extract_user_field(user_obj: Any, key: str, default: str = "") -> str:
@@ -206,7 +207,7 @@ def get_current_user() -> dict[str, Any] | None:
 def render_login_gate() -> dict[str, Any] | None:
     """Controla o acesso à aplicação exigindo autenticação Google (OIDC)."""
     if not has_google_oauth_config():
-        st.title("☕ Cafeteria Grão do Agreste — ERP & BI")
+        st.title(":material/local_cafe: Cafeteria Grão do Agreste - Gestão Integrada")
         st.error(
             "Autenticação Google (OIDC) ainda não configurada neste ambiente. "
             "Configure `[auth]` e `[auth.google]` em `.streamlit/secrets.toml` "
@@ -220,32 +221,149 @@ def render_login_gate() -> dict[str, Any] | None:
 
     if not _is_logged_in():
         st.session_state.pop("current_user", None)
-        col_left, col_center, col_right = st.columns([1, 2, 1])
+
+        bg_uri = get_asset_data_uri("login-background.jpg")
+        google_svg_uri = get_asset_data_uri("google-logo.svg")
+
+        bg_css = (
+            f"""
+            background-color: #FFFFFF !important;
+            background-image: url("{bg_uri}") !important;
+            background-repeat: no-repeat !important;
+            background-position: center bottom !important;
+            background-size: cover !important;
+            background-attachment: fixed !important;
+            min-height: 100vh !important;
+            """
+            if bg_uri
+            else "background: linear-gradient(180deg, #FAF7F2 0%, #EFE4D4 100%) !important;"
+        )
+
+        google_icon_css = (
+            f"""
+            .st-key-btn_google_login button::before {{
+                content: "";
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                margin-right: 12px;
+                background-image: url("{google_svg_uri}");
+                background-size: contain;
+                background-repeat: no-repeat;
+                background-position: center;
+                flex-shrink: 0;
+            }}
+            """
+            if google_svg_uri
+            else ""
+        )
+
+        st.markdown(
+            f"""
+            <style>
+            .stApp,
+            [data-testid="stAppViewContainer"] {{
+                {bg_css}
+            }}
+            [data-testid="stMain"],
+            [data-testid="stMainBlockContainer"] {{
+                background: transparent !important;
+            }}
+            [data-testid="stHeader"] {{
+                background: transparent !important;
+            }}
+            [data-testid="stSidebar"] {{
+                display: none;
+            }}
+            .login-card-wrap {{
+                background: rgba(255, 255, 255, 0.94);
+                backdrop-filter: blur(6px);
+                border: 1px solid #E6D8C8;
+                border-radius: 18px;
+                padding: 2.2rem 2rem 1.75rem 2rem;
+                box-shadow: 0 12px 34px rgba(59, 40, 30, 0.10);
+                text-align: center;
+                margin-top: 3rem;
+            }}
+            .login-title {{
+                font-size: 1.9rem;
+                font-weight: 800;
+                color: #2C1E16;
+                margin: 0 0 0.3rem 0;
+            }}
+            .login-subtitle {{
+                font-size: 0.98rem;
+                font-weight: 600;
+                color: #6B4F3F;
+                margin-bottom: 0.35rem;
+            }}
+            .login-meta {{
+                font-size: 0.80rem;
+                font-weight: 500;
+                color: #8C7466;
+                margin-bottom: 1.25rem;
+            }}
+            .st-key-btn_google_login button {{
+                background-color: #FFFFFF !important;
+                color: #1F1F1F !important;
+                border: 1px solid #DADCE0 !important;
+                border-radius: 999px !important;
+                min-height: 46px !important;
+                padding: 0.55rem 1.4rem !important;
+                font-family: "Roboto", "Segoe UI", Arial, sans-serif !important;
+                font-size: 0.96rem !important;
+                font-weight: 600 !important;
+                letter-spacing: 0.01em !important;
+                box-shadow: 0 1px 3px rgba(60, 64, 67, 0.12) !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                transition: background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease !important;
+            }}
+            .st-key-btn_google_login button:hover {{
+                background-color: #F8FAFF !important;
+                border-color: #D2E3FC !important;
+                box-shadow: 0 2px 6px rgba(60, 64, 67, 0.18) !important;
+            }}
+            .st-key-btn_google_login button:active {{
+                background-color: #EEF3FD !important;
+            }}
+            .st-key-btn_google_login button p {{
+                margin: 0 !important;
+                font-weight: 600 !important;
+                color: #1F1F1F !important;
+            }}
+            {google_icon_css}
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        col_left, col_center, col_right = st.columns([1.2, 1.8, 1.2])
         with col_center:
             st.markdown(
                 """
-                <div style="text-align:center; padding: 2rem 1rem 1rem 1rem;">
-                    <h1>☕ Cafeteria Grão do Agreste</h1>
-                    <p style="font-size: 1.05rem; color: #5C4033;">
-                        Sistema Integrado de Gestão (ERP) &amp; Inteligência de Negócios (BI)<br/>
-                        <small>Sistemas de Informação e Tecnologias — UFAPE (2026.2)</small>
-                    </p>
+                <div class="login-card-wrap">
+                    <div class="login-title">Cafeteria Grão do Agreste</div>
+                    <div class="login-subtitle">Sistema Integrado de Gestão e Inteligência de Negócios</div>
+                    <div class="login-meta">Sistemas de Informação e Tecnologias - UFAPE (2026.2)</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
-            with st.container(border=True):
-                st.subheader("Acesso Seguro com Conta Google")
-                st.write(
-                    "Faça login com sua conta Google institucional ou pessoal para acessar os "
-                    "módulos do ERP e o Dashboard BI com rastreabilidade completa das operações."
-                )
-                if st.button(
-                    "🔐 Entrar com Google",
-                    type="primary",
-                    use_container_width=True,
-                ):
-                    st.login("google")
+            st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+            if st.button(
+                "Continuar com o Google",
+                key="btn_google_login",
+                use_container_width=True,
+            ):
+                st.login("google")
+            st.markdown(
+                "<p style='text-align:center; font-size:0.78rem; color:#7A6558; margin-top:0.6rem;'>"
+                "Acesso autenticado com rastreabilidade completa das operações."
+                "</p>",
+                unsafe_allow_html=True,
+            )
         return None
 
     # Usuário autenticado via Google -> sincroniza com PostgreSQL uma vez por sessão
