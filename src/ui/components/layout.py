@@ -265,9 +265,20 @@ def inject_sidebar_theme() -> None:
         [data-testid="stSidebar"] hr {
             border-color: rgba(217, 165, 114, 0.22) !important;
         }
-        [data-testid="stSidebarCollapseButton"] button,
-        [data-testid="stSidebarCollapseButton"] svg {
-            color: #E8D5C4 !important;
+        [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] button,
+        [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] span,
+        [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] [data-testid="stIconMaterial"],
+        [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] svg {
+            color: #F5E6D3 !important;
+            fill: #F5E6D3 !important;
+        }
+        [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] button:hover {
+            background-color: rgba(255, 240, 224, 0.14) !important;
+            border-radius: 8px !important;
+        }
+        [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] button:hover span,
+        [data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"] button:hover [data-testid="stIconMaterial"] {
+            color: #FFFFFF !important;
         }
         .sidebar-brand {
             display: flex;
